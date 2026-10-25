@@ -114,12 +114,12 @@ function penal(){
 function q(v){v=v.toLowerCase();document.querySelectorAll('#pt tr').forEach((r,i)=>{if(i)r.style.display=r.textContent.toLowerCase().includes(v)||[...r.querySelectorAll('input')].some(x=>x.value.toLowerCase().includes(v))?'':'none'})}
 
 function agents(list,groups,grField,remove){
- return `<div class="grid">${groups.map(g=>{const m=list.filter(x=>x[grField]===g);return `<div class="card"><h3>${g} <span class="tag">${m.length}</span></h3>${m.length?m.map(x=>`<span class="ag"><b>${e(x.mat)}</b> ${e(x.name)} ${adm()?`<a href="#" style="color:var(--r);text-decoration:none" onclick="${remove(x)};return false">✕</a>`:''}</span>`).join(''):'<span class="sub">Personne pour l’instant.</span>'}</div>`}).join('')}</div>`;
+ return `<div class="grid">${groups.map(g=>{const m=list.filter(x=>x[grField]===g);return `<div class="card"><h3>${g} <span class="tag">${m.length}</span></h3>${m.length?m.map(x=>`<span class="ag"><b>${e(x.mat)}</b> ${e(x.name)}${x.admin?' <span title="Admin">★</span>':''} ${adm()&&list===S.ag?`<label class="ck" style="display:inline-flex;margin:0" title="Admin"><input type="checkbox" ${x.admin?'checked':''} onchange="setAdmin('${x.id}',this.checked)"></label>`:''}${adm()?`<a href="#" style="color:var(--r);text-decoration:none" onclick="${remove(x)};return false">✕</a>`:''}</span>`).join(''):'<span class="sub">Personne pour l’instant.</span>'}</div>`}).join('')}</div>`;
 }
 function effectif(){
  const a=adm();
  return `<h2>Effectif</h2><p class="sub">${S.ag.length} agents · ${S.ag.filter(x=>x.u).length} comptes activés.</p>
- ${a&&S.req.length?reqCard():''}${a?`<div class="card"><h3>Ajouter un agent (génère son lien d’invitation)</h3><div class="grid"><div><label>Nom RP</label><input id="an"></div><div><label>Matricule</label><input id="am" maxlength="2"></div><div><label>Grade</label><select id="ag">${GR.map(g=>`<option ${g=='Rookie'?'selected':''}>${g}</option>`).join('')}</select></div></div><br><button class="pri" onclick="addAg()">Créer l’agent</button><div id="lk"></div></div>`:''}
+ ${a&&S.req.length?reqCard():''}${a?`<div class="card"><h3>Ajouter un agent (génère son lien d’invitation)</h3><div class="grid"><div><label>Nom RP</label><input id="an"></div><div><label>Matricule</label><input id="am" maxlength="2"></div><div><label>Grade</label><select id="ag">${GR.map(g=>`<option ${g=='Rookie'?'selected':''}>${g}</option>`).join('')}</select></div><div><label>&nbsp;</label><label class="ck"><input type="checkbox" id="aadm"> Administrateur</label></div></div><br><button class="pri" onclick="addAg()">Créer l’agent</button><div id="lk"></div></div>`:''}
  ${agents(S.ag,GR,'g',x=>`rmAg('${x.id}')`)}
  ${a?`<div class="card tw"><h3>Liens d’invitation en attente</h3>${S.ag.filter(x=>x.inv).map(x=>`<div class="row"><span>${e(x.name)}</span><code>${location.href.split('#')[0]}#/invitation/${x.inv}</code></div>`).join('')||'<span class="sub">Aucun.</span>'}</div>`:''}`;
 }
@@ -128,7 +128,7 @@ function addAg(){
  if(!n||!/^\d{2}$/.test(m))return alert('Nom et matricule à 2 chiffres requis.');
  if(S.ag.some(x=>x.mat===m))return alert('Matricule déjà pris.');
  const inv=Math.random().toString(36).slice(2,12)+Math.random().toString(36).slice(2,8);
- S.ag.push({id:'a'+Date.now(),name:n,mat:m,g:$('#ag').value,inv});sv();render();
+ S.ag.push({id:'a'+Date.now(),name:n,mat:m,g:$('#ag').value,inv,admin:$('#aadm').checked});sv();render();
 }
 function reg(){$('#root').innerHTML=`<div class="login"><div class="logo big-logo">★</div><h2>Créer un compte policier</h2><p class="sub">Un administrateur doit valider ta demande avant que tu puisses te connecter.</p><label>Nom RP</label><input id="n" placeholder="Prénom Nom"><label>Identifiant</label><input id="u"><label>Mot de passe</label><input id="p" type="password"><small class="sub">8 caractères minimum, avec au moins une lettre et un chiffre.</small><label>Confirme le mot de passe</label><input id="p2" type="password"><p id="er" style="color:var(--r)"></p><button class="pri" style="width:100%" onclick="doReg()">Envoyer ma demande</button><p class="sub" style="margin-top:14px"><a href="#" style="color:#8fb0ff" onclick="location.hash='';return false">Retour à la connexion</a></p></div>`}
 function doReg(){const n=$('#n').value.trim(),u=$('#u').value.trim().toLowerCase(),p=$('#p').value,er=t=>$('#er').textContent=t;
@@ -140,12 +140,13 @@ function doReg(){const n=$('#n').value.trim(),u=$('#u').value.trim().toLowerCase
  S.req.push({id:'r'+Date.now(),name:n,u,p,d:new Date().toLocaleString('fr-FR')});sv();
  $('#root').innerHTML=`<div class="login"><div class="logo big-logo">★</div><h2>Demande envoyée</h2><p class="sub">Un administrateur va examiner ton compte. Reviens te connecter une fois validé.</p><button class="pri" onclick="location.hash=''">Retour à la connexion</button></div>`}
 function freeMat(){for(let i=1;i<100;i++){const k=String(i).padStart(2,'0');if(!S.ag.some(x=>x.mat===k))return k}return ''}
-function reqCard(){return `<div class="card" style="border-color:var(--o)"><h3>Demandes de comptes <span class="tag">${S.req.length}</span></h3>${S.req.map(r=>`<div class="row" style="flex-wrap:wrap;align-items:center"><span><b style="min-width:0">${e(r.name)}</b> <small class="sub">@${e(r.u)} · ${e(r.d)}</small></span><span style="display:flex;gap:6px;flex-wrap:wrap"><select id="rg${r.id}" style="width:auto">${GR.map(g=>`<option ${g=='Rookie'?'selected':''}>${g}</option>`).join('')}</select><input id="rm${r.id}" style="width:70px" maxlength="2" value="${freeMat()}"><button class="pri" onclick="okReq('${r.id}')">Accepter</button><button class="del" onclick="noReq('${r.id}')">Refuser</button></span></div>`).join('')}</div>`}
+function reqCard(){return `<div class="card" style="border-color:var(--o)"><h3>Demandes de comptes <span class="tag">${S.req.length}</span></h3>${S.req.map(r=>`<div class="row" style="flex-wrap:wrap;align-items:center"><span><b style="min-width:0">${e(r.name)}</b> <small class="sub">@${e(r.u)} · ${e(r.d)}</small></span><span style="display:flex;gap:6px;flex-wrap:wrap"><select id="rg${r.id}" style="width:auto">${GR.map(g=>`<option ${g=='Rookie'?'selected':''}>${g}</option>`).join('')}</select><input id="rm${r.id}" style="width:70px" maxlength="2" value="${freeMat()}"><label class="ck"><input type="checkbox" id="ra${r.id}"> Admin</label><button class="pri" onclick="okReq('${r.id}')">Accepter</button><button class="del" onclick="noReq('${r.id}')">Refuser</button></span></div>`).join('')}</div>`}
 function okReq(id){const r=S.req.find(x=>x.id===id);if(!r||!adm())return;const m=$('#rm'+id).value.trim().padStart(2,'0');
  if(!/^\d{2}$/.test(m))return alert('Matricule à 2 chiffres requis.');
  if(S.ag.some(x=>x.mat===m))return alert('Matricule déjà pris.');
- S.ag.push({id:'a'+Date.now(),name:r.name,mat:m,g:$('#rg'+id).value,u:r.u,p:r.p});S.req=S.req.filter(x=>x.id!==id);sv();render()}
+ S.ag.push({id:'a'+Date.now(),name:r.name,mat:m,g:$('#rg'+id).value,u:r.u,p:r.p,admin:$('#ra'+id).checked});S.req=S.req.filter(x=>x.id!==id);sv();render()}
 function noReq(id){if(!adm()||!confirm('Refuser cette demande ?'))return;S.req=S.req.filter(x=>x.id!==id);sv();render()}
+function setAdmin(id,v){const a=S.ag.find(x=>x.id===id);if(!a||!adm())return;if(!v&&S.ag.filter(x=>x.admin).length<=1){alert('Il doit rester au moins un administrateur.');return render()}a.admin=v;sv();render()}
 function rmAg(id){if(id==S.me||!confirm('Retirer cet agent ?'))return;S.ag=S.ag.filter(x=>x.id!==id);sv();render()}
 function mat(){
  let s='';for(let i=1;i<100;i++){const k=String(i).padStart(2,'0'),a=S.ag.find(x=>x.mat===k);s+=`<div class="card" style="margin:0;padding:8px;${a?'border-color:var(--a)':''}"><b>${k}</b><br><small class="sub">${a?e(a.name):'<span style="color:var(--g)">Libre</span>'}</small></div>`}
